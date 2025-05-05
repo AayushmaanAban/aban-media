@@ -181,11 +181,15 @@ export function ContactSection() {
         throw new Error(data.message || 'Failed to submit form');
       }
 
-      toast.success(data.message || "Form submitted successfully!");
-      setSubmitted(true);
+      if (data.success) {
+        toast.success(data.message || "Form submitted successfully!");
+        setSubmitted(true);
+      } else {
+        throw new Error(data.message || 'Failed to submit form');
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error("There was an error submitting the form. Please try again.");
+      toast.error(error instanceof Error ? error.message : "There was an error submitting the form. Please try again.");
     }
   };
 
