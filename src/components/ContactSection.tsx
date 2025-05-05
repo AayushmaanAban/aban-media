@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { ArrowDown, ArrowUp, Check } from 'lucide-react';
 
 // Define the validation schema for the form
 const formSchema = z.object({
@@ -44,7 +45,10 @@ export function ContactSection() {
     question2: '',
     question3: '',
     question4: '',
-    question5: ''
+    question5: '',
+    name: '',
+    email: '',
+    phone: ''
   });
 
   const questions: QuestionType[] = [
@@ -108,15 +112,22 @@ export function ContactSection() {
   const totalSteps = questions.length;
 
   const handleSelectOption = (questionId: string, optionId: string) => {
+    // Find the selected option's text
+    const question = questions.find(q => q.id === questionId);
+    const selectedOption = question?.options.find(opt => opt.id === optionId);
+    
     setFormData({
       ...formData,
-      [questionId]: optionId
+      [questionId]: selectedOption?.text || optionId // Store the full text instead of just the ID
     });
   };
 
   const handleNext = () => {
-    if (currentStep < totalSteps - 1) {
+    if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
+    } else if (currentStep === questions.length - 1) {
+      // Move to contact form step
+      setCurrentStep(questions.length);
     } else {
       handleSubmit();
     }
@@ -128,9 +139,54 @@ export function ContactSection() {
     }
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    alert('Form submitted successfully! Check console for data.');
+  const handleContactInfoChange = (field: 'name' | 'email' | 'phone', value: string) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      // Validate contact information
+      if (!formData.name || !formData.email || !formData.phone) {
+        toast.error('Please provide your name, email and phone number');
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+
+      // Validate phone number (basic validation)
+      if (formData.phone.length < 10) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
+
+      const response = await fetch('/api/submit-form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to submit form');
+      }
+
+      toast.success(data.message || "Form submitted successfully!");
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("There was an error submitting the form. Please try again.");
+    }
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,30 +210,28 @@ export function ContactSection() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await fetch('/api/submit-form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
 
-      // Determine category based on yearly revenue
-      const revenue = Number.parseFloat(
-        values.yearlyRevenue.replace(/[₹,]/g, "")
-      );
-      const category = revenue >= 1500000 ? "To Call" : "Small Companies";
+      const data = await response.json();
 
-      console.log("Form submitted:", values);
-      console.log("Category:", category);
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to submit form');
+      }
 
       // Show success message
-      toast.success("Form submitted successfully!");
+      toast.success(data.message || "Form submitted successfully!");
 
-      // Redirect to video for small companies
-      if (category === "Small Companies") {
-        setSubmitted(true);
-        // In a real implementation, you'd redirect to a video page
-        // window.location.href = "/resources/small-business";
+      // Handle redirect for small companies
+      if (data.category === "Small Companies" && data.redirectUrl) {
+        window.location.href = data.redirectUrl;
       } else {
         setSubmitted(true);
-        // In a real implementation, you'd store this lead in your "To Call" list
-        // and show a different success message
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -225,162 +279,93 @@ export function ContactSection() {
           {!submitted ? (
             <>
               <div className="sm:w-[80%] w-full max-h-2xl noscroll bg-gray-200 text-black sm:my-11 overflow-hidden overflow-x-hidden overflow-y-auto rounded-lg ">
-              <div className="bg-white p-8 rounded-b-lg relative">
-          <div className="mb-8">
-            <QuestionContent 
-            nextStep={handleNext}
-            
-              question={questions[currentStep]} 
-              selectedOptionId={formData[questions[currentStep].id as keyof FormDataType]} 
-              onSelect={handleSelectOption}
-              stepNumber={currentStep + 1}
-            />
-          </div>
+                <div className="bg-white p-8 rounded-b-lg relative">
+                  {currentStep < questions.length ? (
+                    <div className="mb-8">
+                      <QuestionContent 
+                        question={questions[currentStep]} 
+                        selectedOptionId={formData[questions[currentStep].id as keyof FormDataType]} 
+                        onSelect={handleSelectOption}
+                        stepNumber={currentStep + 1}
+                        nextStep={handleNext}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mb-8">
+                      <h3 className="text-xl font-medium text-gray-800 mb-6">
+                        <span className="text-gray-600 mr-2">{currentStep + 1} →</span> Contact Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Full Name
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => handleContactInfoChange('name', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Enter your full name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleContactInfoChange('email', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Enter your email"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => handleContactInfoChange('phone', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Enter your phone number"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-          <div className="flex justify-between items-center">
-            <button 
-              onClick={handleNext}
-              className="ok-button text-white font-medium py-2 px-8 rounded-md"
-            >
-              OK
-            </button>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={handlePrevious} 
-                disabled={currentStep === 0}
-                className={`nav-button p-2 rounded-md ${currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <ArrowUp className="text-white" size={20} />
-              </button>
-              <button 
-                onClick={handleNext} 
-                disabled={!formData[questions[currentStep].id as keyof FormDataType]}
-                className={`nav-button p-2 rounded-md ${!formData[questions[currentStep].id as keyof FormDataType] ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <ArrowDown className="text-white" size={20} />
-              </button>
-            </div>
-          </div>
-
-          {/* <div className="mt-6">
-            <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
-          </div> */}
-        </div>
+                  <div className="flex justify-between items-center">
+                    <button 
+                      onClick={handleNext}
+                      className="ok-button text-white font-medium py-2 px-8 rounded-md"
+                      disabled={currentStep === questions.length && (!formData.name || !formData.email || !formData.phone)}
+                    >
+                      {currentStep === questions.length ? 'Submit' : 'OK'}
+                    </button>
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={handlePrevious} 
+                        disabled={currentStep === 0}
+                        className={`nav-button p-2 rounded-md ${currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <ArrowUp className="text-white" size={20} />
+                      </button>
+                      <button 
+                        onClick={handleNext} 
+                        disabled={currentStep < questions.length && !formData[questions[currentStep].id as keyof FormDataType]}
+                        className={`nav-button p-2 rounded-md ${currentStep < questions.length && !formData[questions[currentStep].id as keyof FormDataType] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <ArrowDown className="text-white" size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </>
           ) : (
-            // <Card className="bg-purple-medium/40  border border-purple-light/20 gradient-border overflow-hidden shadow-purple-glow">
-            //   <div className="p-6 md:p-8">
-            //     <Form {...form}>
-            //       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            //         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            //           <FormField
-            //             control={form.control}
-            //             name="name"
-            //             render={({ field }) => (
-            //               <FormItem>
-            //                 <FormLabel className="text-white">Full Name</FormLabel>
-            //                 <FormControl>
-            //                   <Input placeholder="John Doe" className="bg-purple-dark border-purple-light/30 text-white" {...field} />
-            //                 </FormControl>
-            //                 <FormMessage />
-            //               </FormItem>
-            //             )}
-            //           />
-
-            //           <FormField
-            //             control={form.control}
-            //             name="businessName"
-            //             render={({ field }) => (
-            //               <FormItem>
-            //                 <FormLabel className="text-white">Business Name</FormLabel>
-            //                 <FormControl>
-            //                   <Input placeholder="Your Business" className="bg-purple-dark border-purple-light/30 text-white" {...field} />
-            //                 </FormControl>
-            //                 <FormMessage />
-            //               </FormItem>
-            //             )}
-            //           />
-            //         </div>
-
-            //         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            //           <FormField
-            //             control={form.control}
-            //             name="email"
-            //             render={({ field }) => (
-            //               <FormItem>
-            //                 <FormLabel className="text-white">Email</FormLabel>
-            //                 <FormControl>
-            //                   <Input type="email" placeholder="you@example.com" className="bg-purple-dark border-purple-light/30 text-white" {...field} />
-            //                 </FormControl>
-            //                 <FormMessage />
-            //               </FormItem>
-            //             )}
-            //           />
-
-            //           <FormField
-            //             control={form.control}
-            //             name="phone"
-            //             render={({ field }) => (
-            //               <FormItem>
-            //                 <FormLabel className="text-white">Phone</FormLabel>
-            //                 <FormControl>
-            //                   <Input placeholder="Your Phone" className="bg-purple-dark border-purple-light/30 text-white" {...field} />
-            //                 </FormControl>
-            //                 <FormMessage />
-            //               </FormItem>
-            //             )}
-            //           />
-            //         </div>
-
-            //         <FormField
-            //           control={form.control}
-            //           name="yearlyRevenue"
-            //           render={({ field }) => (
-            //             <FormItem>
-            //               <FormLabel className="text-white">Yearly Revenue (₹)</FormLabel>
-            //               <FormControl>
-            //                 <Input
-            //                   placeholder="15,00,000"
-            //                   className="bg-purple-dark border-purple-light/30 text-white"
-            //                   {...field}
-            //                   onChange={(e) => {
-            //                     const formattedValue = formatRevenue(e.target.value);
-            //                     field.onChange(formattedValue);
-            //                   }}
-            //                 />
-            //               </FormControl>
-            //               <FormMessage />
-            //             </FormItem>
-            //           )}
-            //         />
-
-            //         <FormField
-            //           control={form.control}
-            //           name="message"
-            //           render={({ field }) => (
-            //             <FormItem>
-            //               <FormLabel className="text-white">Message (Optional)</FormLabel>
-            //               <FormControl>
-            //                 <Input placeholder="Tell us about your marketing needs" className="bg-purple-dark border-purple-light/30 text-white" {...field} />
-            //               </FormControl>
-            //               <FormMessage />
-            //             </FormItem>
-            //           )}
-            //         />
-
-            //         <Button
-            //           type="submit"
-            //           className="w-full bg-purple-gradient font-bold py-6 shadow-purple-glow"
-            //           disabled={isSubmitting}
-            //         >
-            //           {isSubmitting ? "Submitting..." : "GET STARTED NOW"}
-            //         </Button>
-            //       </form>
-            //     </Form>
-            //   </div>
-            // </Card>
             <Card className="bg-purple-medium/40 border border-purple-light/20 gradient-border overflow-hidden shadow-purple-glow p-8 text-center">
               <h3 className="text-2xl font-bold text-white mb-4 font-space-grotesk">
                 Thank You for Your Submission!
@@ -408,10 +393,6 @@ export function ContactSection() {
   );
 }
 
-
-import { ArrowDown, ArrowUp, Check } from 'lucide-react';
-// import './App.css';
-
 interface Option {
   nextStep?: () => void;
   id: string;
@@ -431,6 +412,9 @@ interface FormDataType {
   question3: string;
   question4: string;
   question5: string;
+  name: string;
+  email: string;
+  phone: string;
 }
 
 const OptionButton: React.FC<{
