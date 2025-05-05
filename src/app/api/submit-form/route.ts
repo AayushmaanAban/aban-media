@@ -10,6 +10,8 @@ console.log('Environment check:', {
   clientEmail: process.env.GOOGLE_CLIENT_EMAIL
 });
 
+const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
+
 // Initialize Google Sheets API
 const auth = new google.auth.GoogleAuth({
   credentials: {
@@ -20,16 +22,16 @@ const auth = new google.auth.GoogleAuth({
 });
 
 const sheets = google.sheets({ version: 'v4', auth });
-const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 
 export async function POST(request: Request) {
   try {
     const formData = await request.json();
+    console.log('Received form data:', formData);
 
     // Check if required fields are present
     if (!formData.name || !formData.email || !formData.phone) {
       return NextResponse.json(
-        { message: "Name, email and phone are required" },
+        { success: false, message: "Name, email and phone are required" },
         { status: 400 }
       );
     }
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
         // Append the data to the Google Sheet
         const response = await sheets.spreadsheets.values.append({
           spreadsheetId: SPREADSHEET_ID,
-          range: 'Sheet1!A:I', // Updated range to include all columns
+          range: 'Sheet1!A:I',
           valueInputOption: 'RAW',
           requestBody: {
             values: [rowData],
@@ -97,7 +99,7 @@ export async function POST(request: Request) {
         console.log('Google Sheets API Response:', response.data);
         return NextResponse.json({
           success: true,
-          message: 'Thank you for completing the quiz!',
+          message: 'Form submitted successfully!'
         });
       } catch (error: any) {
         console.error('Detailed Google Sheets error:', {
@@ -186,12 +188,9 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    console.error('Error processing form submission:', {
-      message: error.message,
-      stack: error.stack
-    });
+    console.error('Error processing form submission:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: 'Error processing form submission' },
       { status: 500 }
     );
   }
