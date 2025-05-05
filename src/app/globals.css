@@ -1,0 +1,201 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 273 86% 9%;
+    --foreground: 0 0% 98%;
+    --card: 273 86% 9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 273 86% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 290 50% 44%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 273 60% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 273 60% 16%;
+    --muted-foreground: 287 5% 68%;
+    --accent: 290 50% 44%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 273 45% 30%;
+    --input: 273 45% 30%;
+    --ring: 290 50% 44%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  /* Force dark theme for this site */
+  html {
+    color-scheme: dark;
+  }
+
+  /* Dark theme colors to match stealmyagency.com */
+  :root {
+    --background: 273 86% 9%;
+    --foreground: 0 0% 98%;
+    --card: 273 86% 9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 273 86% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 290 50% 44%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 273 60% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 273 60% 16%;
+    --muted-foreground: 287 5% 68%;
+    --accent: 290 50% 44%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 273 45% 30%;
+    --input: 273 45% 30%;
+    --ring: 290 50% 44%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-color: #0f0521; /* Base dark purple background */
+  }
+}
+
+/* Custom utility classes for the site */
+@layer utilities {
+  .gradient-border {
+    position: relative;
+    border-radius: 0.5rem;
+    z-index: 0;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: calc(0.5rem + 2px);
+    background: linear-gradient(45deg, #a7458d, #623d6f);
+    z-index: -1;
+  }
+
+  .purple-glow {
+    box-shadow: 0 0 25px 5px rgba(167, 69, 141, 0.3);
+  }
+}
+
+.noscroll::-webkit-scrollbar {
+  display: none;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.pixel-font {
+  font-family: "Press Start 2P", cursive;
+  letter-spacing: -0.5px;
+}
+
+.modal-border {
+  border: 2px solid rgba(236, 72, 153, 0.7);
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+}
+
+.option-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.option-selected {
+  background-color: #374151;
+  color: white;
+}
+
+.option-unselected {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.option-container {
+  transition: all 0.2s ease-in-out;
+}
+
+.option-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.question-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.question-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.question-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.question-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.ok-button {
+  background-color: #374151;
+  transition: all 0.2s ease;
+}
+
+.ok-button:hover {
+  background-color: #4f46e5;
+  transform: translateY(-2px);
+}
+
+.nav-button {
+  background-color: #374151;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  background-color: #4b5563;
+}
